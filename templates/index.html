@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat PDF using AWS Bedrock</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+            background-color: #f0f2f6;
+        }
+        .sidebar {
+            width: 250px;
+            background: #343a40;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+        }
+        .sidebar h2 {
+            color: white;
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            margin-left: 250px; /* Leave space for the sidebar */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-y: auto;
+            background: white;
+            position: relative;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        p1{
+            font-weight: bold;
+            font-size: x-large;
+            text-align: center;
+            margin-bottom: 2px;
+            position: absolute;
+            bottom: 0;
+        }
+        input{
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            border: 1.5px solid black;
+            border-radius: 5px;
+        }
+        button {
+            margin: 10px 0;
+            padding: 5px;
+            width: 100%;
+            max-width: 170px;
+            box-sizing: border-box;
+            font-size: 20px;
+            cursor: pointer;
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 7px;
+        }
+        button:hover {
+            background-color: #9d1c1c;
+        }
+        .response {
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 17px;
+            text-align: center;
+            background: transparent;
+            border: 2px solid black;
+            border-radius: 7px;
+            max-width: 800px;
+            width: 100%;
+            overflow-wrap: break-word;
+            display: block; /* Visible initially with content */
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #007bff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                box-shadow: none;
+            }
+            .main-content {
+                margin-left: 0;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Update Or Create Vector Store:</h2>
+        <button onclick="updateVectors()">Vectors Update</button>
+        <p2><br><br><br>Documents Available:<br><br><br>machine-learning.pdf<br><br>deep-learning.pdf<br><br>generative-ai.pdf<br><br>yolo.pdf</p2>
+    </div>
+    <div class="main-content">
+        <h1>Chat PDF using AWS Bedrock💁</h1>
+        <input required type="text" id="question" placeholder="Ask a Question from the PDF Files">
+        <div style="text-align: center; margin: 20px 0;">Choose Model:</div>
+        <button onclick="askQuestion('llama2')">Llama2 Model</button>
+        <button onclick="askQuestion('claude')">Claude Model</button><br><br>
+        <div id="spinner" class="spinner"></div>
+        <div id="response" class="response">
+            Chat PDF using AWS Bedrock is like having a smart assistant for your documents! 📄💬<br><br>
+            Imagine uploading a PDF, and AWS Bedrock analyzes it like a pro, breaking down complex jargon into easy-to-understand language. It's as if you're having a conversation with someone who's really good at simplifying things! 🤓✨<br><br>
+            Need to understand a technical report or legal document? No problem! Bedrock sifts through the details, offering clear explanations without missing a beat. 🕵️‍♂️💡<br><br>
+            Plus, it's not just about decoding text. Bedrock can highlight key points, summarize long paragraphs, and even suggest actions based on what it reads. It's like having a friendly expert by your side, helping you navigate through any document with ease. 🚀📝<br><br>
+            So, whether you're diving into contracts, research papers, or manuals, AWS Bedrock is your go-to for understanding PDFs in a way that feels natural and straightforward. It's document understanding, made human-friendly! 👩‍💻🔍
+        </div><br><br><br><br><br><br><br><br><br>
+        <p1>
+            By: Umang Tiwari<br>
+            🚀 <a href="https://github.com/umangmtiwari" target="_blank">Github</a><br>
+            🌐 <a href="https://www.linkedin.com/in/umang-tiwari-252616210/" target="_blank">LinkedIn</a><br><br>
+        </p1>
+    </div>
+    <script>
+        async function askQuestion(model) {
+            const question = document.getElementById('question').value;
+            const responseDiv = document.getElementById('response');
+            const spinner = document.getElementById('spinner');
+
+            if (!question) {
+                alert("Please enter a question.");
+                return;
+            }
+
+            responseDiv.style.display = "none"; // Hide initial response
+            responseDiv.innerHTML = "";
+            spinner.style.display = "inline-block";
+
+            const response = await fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question, model })
+            });
+
+            const data = await response.json();
+            responseDiv.innerHTML = `<p>${data.answer}</p>`;
+            responseDiv.style.display = "block"; // Show response
+            spinner.style.display = "none";
+        }
+
+        async function updateVectors() {
+            const spinner = document.getElementById('spinner');
+            spinner.style.display = "inline-block";
+
+            const response = await fetch('/update_vectors', {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+            alert(data.status);
+            spinner.style.display = "none";
+        }
+    </script>
+</body>
+</html>
